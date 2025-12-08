@@ -1,0 +1,158 @@
+esphome:
+  name: esphome-web-0f4168
+  friendly_name: ESPHome Web 0f4168
+  min_version: 2025.9.0
+  name_add_mac_suffix: false
+
+esp32:
+  variant: esp32
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+# Allow Over-The-Air updates
+ota:
+- platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  ap:
+    ssid: "esphome-web-0f4168 Fallback"
+    password: "fallback1234"
+
+preferences:
+  flash_write_interval: 1min
+
+
+# Provide a captive portal so users can connect to the fallback AP
+captive_portal:
+
+
+# LED strip with segmented addressable lights
+light:
+  - platform: esp32_rmt_led_strip
+    id: full_strip
+    name: "Full Strip"
+    pin: GPIO4
+    num_leds: 83
+    chipset: WS2812
+    rgb_order: GRB
+    internal: true   # Prevent conflicts when partitioning
+    restore_mode: RESTORE_DEFAULT_OFF 
+    effects:
+      - random:
+      - strobe:
+      - flicker:
+      - addressable_rainbow:
+      - addressable_color_wipe:
+      - addressable_scan:
+      - addressable_twinkle:
+      - addressable_fireworks:
+
+  # Side segment: LEDs 0-22
+  - platform: partition
+    name: "Side Strip"
+    id: side_strip
+    restore_mode: RESTORE_DEFAULT_OFF 
+    segments:
+      - id: full_strip
+        from: 0
+        to: 22
+    effects:
+      - random:
+      - strobe:
+      - flicker:
+      - addressable_rainbow:
+      - addressable_color_wipe:
+      - addressable_scan:
+      - addressable_twinkle:
+      - addressable_fireworks:
+
+  # Countertop segment: LEDs 23-82
+  - platform: partition
+    name: "Countertop Strip"
+    id: countertop_strip
+    restore_mode: RESTORE_DEFAULT_OFF
+    segments:
+      - id: full_strip
+        from: 23
+        to: 82
+    effects:
+      - random:
+      - strobe:
+      - flicker:
+      - addressable_rainbow:
+      - addressable_color_wipe:
+      - addressable_scan:
+      - addressable_twinkle:
+      - addressable_fireworks:
+
+# I2C bus for sensors
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+# BME688 environmental sensor using BSEC2 library (I2C)
+# Define the BSEC2 hub component
+bme68x_bsec2_i2c:
+  id: bme68x_bsec2_hub
+  address: 0x77
+  model: bme688
+  # Optional: you can set operating_age, sample_rate, supply_voltage, etc.
+
+# Sensors that use the hub defined above
+sensor:
+  - platform: bme68x_bsec2
+    bme68x_bsec2_id: bme68x_bsec2_hub
+    temperature:
+      name: "BME688 Temperature"
+    humidity:
+      name: "BME688 Humidity"
+    pressure:
+      name: "BME688 Pressure"
+    gas_resistance:
+      name: "BME688 Gas Resistance"
+    iaq:
+      name: "BME688 IAQ"
+    iaq_accuracy:
+      name: "BME688 IAQ Accuracy"
+    iaq_static:
+      name: "BME688 Static IAQ"
+    co2_equivalent:
+      name: "BME688 CO2 Equivalent"
+    breath_voc_equivalent:
+      name: "BME688 Breath VOC Equivalent"
+
+# # i2s_audio component for PDM microphone (bus definition)
+# i2s_audio:
+#   id: i2s_mic
+#   i2s_bclk_pin: GPIO14   # bit clock pin
+#   i2s_lrclk_pin: GPIO13   # left‑right clock (required)
+
+# # PDM microphone using the i2s_audio component
+# microphone:
+#   - platform: i2s_audio
+#     id: pdm_mic
+#     i2s_audio_id: i2s_mic
+#     adc_type: external
+#     i2s_din_pin: GPIO33   # data pin for external ADC (changed from GPIO15 to avoid strapping warning)
+#     pdm: true
+#     sample_rate: 16000  # Hz
+#     bits_per_sample: 16bit
+
+
+# voice_assistant:
+#   microphone: pdm_mic
+
+
+# Optional web UI
+web_server:
+  port: 80
