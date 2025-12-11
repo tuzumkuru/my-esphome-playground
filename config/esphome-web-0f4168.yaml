@@ -100,6 +100,110 @@ i2c:
   scl: GPIO22
   scan: true
 
+# APDS9960 proximity sensor + motion template (uses existing I2C bus)
+# IDs are prefixed with `web_` to avoid collisions with other devices.
+apds9960:
+  - id: web_apds
+    # hardware sampling interval; change and reflash if you want
+    update_interval: 100ms
+
+number:
+  - platform: template
+    name: "Web APDS Threshold"
+    id: web_apds_threshold_number
+    lambda: |-
+      return id(web_motion_threshold);
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - globals.set:
+          id: web_motion_threshold
+          value: !lambda 'return x;'
+    disabled_by_default: true
+
+  - platform: template
+    name: "Web APDS Stable ms"
+    id: web_apds_stable_ms_number
+    lambda: |-
+      return (float)id(web_motion_stable_ms);
+    min_value: 0
+    max_value: 60000
+    step: 500
+    set_action:
+      - globals.set:
+          id: web_motion_stable_ms
+          value: !lambda 'return (int)x;'
+    disabled_by_default: true
+
+  - platform: template
+    name: "Web APDS Refresh ms"
+    id: web_apds_refresh_ms_number
+    lambda: |-
+      return (float)id(web_motion_refresh_ms);
+    min_value: 10
+    max_value: 10000
+    step: 10
+    set_action:
+      - globals.set:
+          id: web_motion_refresh_ms
+          value: !lambda 'return (int)x;'
+    disabled_by_default: true
+
+globals:
+  - id: web_motion_active
+    type: bool
+    initial_value: 'false'
+    restore_value: false
+  - id: web_motion_threshold
+    type: float
+    initial_value: '20.0'
+    restore_value: true
+  - id: web_motion_stable_ms
+    type: int
+    initial_value: '1000'
+    restore_value: true
+  - id: web_motion_refresh_ms
+    type: int
+    initial_value: '100'
+    restore_value: true
+
+# Template binary sensor for motion; visible in HA
+binary_sensor:
+  - platform: template
+    name: "Web APDS Motion"
+    id: web_apds_motion
+    lambda: |-
+      static unsigned long last_change = 0;
+      static unsigned long last_process = 0;
+      static bool state = false;
+      const float threshold = id(web_motion_threshold);
+      const unsigned long stable_ms = (unsigned long) id(web_motion_stable_ms);
+      const unsigned long refresh_ms = (unsigned long) id(web_motion_refresh_ms);
+      float prox = id(web_apds_proximity).state;
+      unsigned long now = millis();
+      if (now - last_process < refresh_ms) {
+        return state;
+      }
+      last_process = now;
+      if (prox > threshold) {
+        last_change = now;
+        if (!state) state = true;
+      } else {
+        if (now - last_change > stable_ms) {
+          if (state) state = false;
+        }
+      }
+      return state;
+    on_press:
+      - globals.set:
+          id: web_motion_active
+          value: 'true'
+    on_release:
+      - globals.set:
+          id: web_motion_active
+          value: 'false'
+
 # BME688 environmental sensor using BSEC2 library (I2C)
 # Define the BSEC2 hub component
 bme68x_bsec2_i2c:
@@ -110,6 +214,16 @@ bme68x_bsec2_i2c:
 
 # Sensors that use the hub defined above
 sensor:
+  - platform: apds9960
+    type: proximity
+    name: "Web APDS Proximity"
+    id: web_apds_proximity
+    disabled_by_default: true
+    on_value:
+      then:
+        - lambda: |-
+            ESP_LOGD("web_apds", "proximity=%f", x);
+
   - platform: bme68x_bsec2
     bme68x_bsec2_id: bme68x_bsec2_hub
     temperature:
