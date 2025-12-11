@@ -1,0 +1,180 @@
+esphome:
+  name: esphome-picow
+  friendly_name: ESPHome PicoW
+  name_add_mac_suffix: True
+
+rp2040:
+  board: rpipicow
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  # encryption:
+  #   key: !secret picow_api_encryption_key
+  # encryption:
+  #   key: !secret picow_api_encryption_key
+
+ota:
+  - platform: esphome
+    # password: !secret picow_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  fast_connect: false
+  manual_ip:
+    static_ip: 192.168.1.82
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+  # Enable fallback hotspot in case wifi connection fails
+  ap:
+    ssid: !secret picow_fallback_ssid
+    password: !secret picow_fallback_password
+
+# I2C bus for APDS9960 - match pins used in other PicoW config
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+  scan: true
+
+# APDS9960 component required by the sensor platform
+apds9960:
+  id: apds
+  # Increase update rate so proximity values are available frequently
+  update_interval: 100ms
+
+# Use the `sensor` platform for the APDS9960 proximity reading
+sensor:
+  - platform: apds9960
+    type: proximity
+    name: "APDS Proximity"
+    id: apds_proximity
+    disabled_by_default: true
+    # Log each proximity value to the ESPHome logger (helps tune threshold)
+    on_value:
+      then:
+        - lambda: |-
+            ESP_LOGD("apds", "proximity=%f", x);
+
+# Expose runtime-adjustable numbers so threshold and stability window
+# can be changed from Home Assistant without re-flashing.
+number:
+  - platform: template
+    name: "APDS Threshold"
+    id: apds_threshold_number
+    lambda: 'return id(motion_threshold);'
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - globals.set:
+          id: motion_threshold
+          value: !lambda 'return x;'
+    disabled_by_default: true
+
+  - platform: template
+    name: "APDS Stable ms"
+    id: apds_stable_ms_number
+    lambda: 'return (float)id(motion_stable_ms);'
+    min_value: 0
+    max_value: 60000
+    step: 500
+    set_action:
+      - globals.set:
+          id: motion_stable_ms
+          value: !lambda 'return (int)x;'
+    disabled_by_default: true
+
+  - platform: template
+    name: "APDS Refresh ms"
+    id: apds_refresh_ms_number
+    lambda: 'return (float)id(motion_refresh_ms);'
+    min_value: 10
+    max_value: 10000
+    step: 10
+    set_action:
+      - globals.set:
+          id: motion_refresh_ms
+          value: !lambda 'return (int)x;'
+    disabled_by_default: true
+
+globals:
+  - id: motion_active
+    type: bool
+    initial_value: 'false'
+  - id: motion_threshold
+    type: float
+    initial_value: '20.0'
+    restore_value: true
+  - id: motion_stable_ms
+    type: int
+    initial_value: '1000'
+    restore_value: true
+  - id: motion_refresh_ms
+    type: int
+    initial_value: '100'
+    restore_value: true
+
+switch:
+  - platform: gpio
+    pin:
+      number: LED
+      mode: output
+    id: LED
+    internal: true
+
+binary_sensor:
+  - platform: template
+    name: "APDS Motion"
+    id: apds_motion
+    lambda: |-
+      static unsigned long last_change = 0;
+      static unsigned long last_process = 0;
+      static bool state = false;
+      const float threshold = id(motion_threshold);
+      const unsigned long stable_ms = (unsigned long) id(motion_stable_ms);
+      const unsigned long refresh_ms = (unsigned long) id(motion_refresh_ms);
+      float prox = id(apds_proximity).state;
+      unsigned long now = millis();
+      if (now - last_process < refresh_ms) {
+        return state;
+      }
+      last_process = now;
+      if (prox > threshold) {
+        last_change = now;
+        if (!state) state = true;
+      } else {
+        if (now - last_change > stable_ms) {
+          if (state) state = false;
+        }
+      }
+      return state;
+    on_press:
+      - globals.set:
+          id: motion_active
+          value: 'true'
+      - switch.turn_on: LED
+    on_release:
+      - globals.set:
+          id: motion_active
+          value: 'false'
+      - switch.turn_off: LED
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: 'return !id(motion_active);'
+          then:
+            - if:
+                condition:
+                  not:
+                    wifi.connected:
+                then:
+                  - switch.toggle: LED
+                else:
+                  - switch.turn_off: LED
