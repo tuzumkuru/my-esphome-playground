@@ -1,0 +1,131 @@
+esphome:
+  name: esphome-picow-sgp40
+  friendly_name: ESPHome PicoW SGP40
+  name_add_mac_suffix: true
+
+rp2040:
+  board: rpipicow
+
+globals:
+  - id: led_activity_enabled
+    type: bool
+    initial_value: 'true'
+    restore_value: true
+  - id: sgp4x_update_interval_s
+    type: int
+    initial_value: '60'
+    restore_value: true
+
+logger:
+
+api:
+  encryption:
+    key: !secret picow_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret picow_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: NONE
+  fast_connect: false
+  manual_ip:
+    static_ip: 192.168.1.82
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+  ap:
+    ssid: !secret picow_fallback_ssid
+    password: !secret picow_fallback_password
+
+switch:
+  - platform: gpio
+    pin:
+      number: 32
+      mode: output
+    id: LED
+  - platform: template
+    name: "LED Activity"
+    id: led_activity
+    optimistic: true
+    icon: mdi:led-strip
+    turn_on_action:
+      - globals.set:
+          id: led_activity_enabled
+          value: 'true'
+    turn_off_action:
+      - globals.set:
+          id: led_activity_enabled
+          value: 'false'
+      - switch.turn_off:
+          id: LED
+
+interval:
+  - interval: 500ms
+    then:
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(led_activity_enabled);
+              - not:
+                  wifi.connected: {}
+          then:
+            - switch.toggle:
+                id: LED
+  - interval: 1000ms
+    then:
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(led_activity_enabled);
+              - wifi.connected: {}
+          then:
+            - switch.toggle:
+                id: LED
+
+# I2C for SGP4x/SGP40
+i2c:
+  - sda: 4
+    scl: 5
+    scan: true
+
+sensor:
+  - platform: sgp4x
+    id: sgp4x_sensor
+    address: 0x59
+    store_baseline: true
+    update_interval: 60s
+    voc:
+      name: SGP40 VOC Index
+      id: sgp40_voc_index
+      disabled_by_default: true
+      on_value:
+        then:
+          - lambda: |-
+              ESP_LOGD("sgp4x", "voc_index=%f", x);
+
+number:
+  - platform: template
+    name: SGP4x Sensor Update Interval
+    id: sgp4x_update_interval_number
+    lambda: |-
+      return (float) id(sgp4x_update_interval_s);
+    min_value: 1.0
+    max_value: 3600.0
+    step: 1.0
+    set_action:
+      then:
+        - globals.set:
+            id: sgp4x_update_interval_s
+            value: !lambda 'return (int)x;'
+        - component.resume:
+            id: sgp4x_sensor
+            update_interval: !lambda |-
+              return (uint32_t)(x * 1000);
+    unit_of_measurement: s
+    optimistic: false
+    update_interval: 60s
+
