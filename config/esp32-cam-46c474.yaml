@@ -1,0 +1,117 @@
+substitutions:
+  device_name: "esp32-cam-46c474"
+  friendly_name: ESP32-CAM 46c474
+
+esphome:
+  name: $device_name
+  friendly_name: $friendly_name
+
+esp32:
+  board: esp32cam
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  reboot_timeout: 0s
+  encryption:
+    key: !secret esp32-cam_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret esp32-cam_ota_password
+
+wifi:
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+    - ssid: !secret backup_wifi_ssid
+      password: !secret backup_wifi_password
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: $friendly_name Fallback
+    password: !secret esp32_cam_ap_password
+
+captive_portal:
+
+psram:
+
+i2c:
+  - id: camera_i2c
+    sda: GPIO26
+    scl: GPIO27
+
+esp32_camera:
+  name: OV2640
+  external_clock:
+    pin: GPIO0
+    frequency: 10MHz
+  i2c_id: camera_i2c
+  data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+  vsync_pin: GPIO25
+  href_pin: GPIO23
+  pixel_clock_pin: GPIO22
+  power_down_pin: GPIO32
+  # Image/Video settings, https://esphome.io/components/esp32_camera.html
+  max_framerate: 25 fps    # default: 10 fps, max 60
+  idle_framerate: 0.2 fps # default: 0.1 fps - framerate for 'picture' in HA dashboard
+  resolution: 1024x768
+  jpeg_quality: 10
+  vertical_flip: False
+  contrast: 0 # default: 0, variable -2 to 2
+  brightness: 0 # default: 0, variable -2 to 2
+  saturation: 0 # default: 0, variable -2 to 2
+  
+# Server video/pictures, https://esphome.io/components/esp32_camera_web_server.html
+# esp32_camera_web_server:
+#   - port: 8080
+#     mode: stream
+#   - port: 8081
+#     mode: snapshot
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+output:
+#flashlight
+  - platform: gpio
+    pin: GPIO4
+    id: gpio_4
+#statuslight led 33 for wifi connect
+  - platform: gpio
+    pin:
+      number: GPIO33
+      inverted: True
+    id: gpio_33
+
+light:
+#flashlight
+  - platform: binary
+    output: gpio_4
+    name: Light
+#statuslight led 33 for wifi connect
+  - platform: binary
+    output: gpio_33
+    name: Light State
+
+sensor:
+  - platform: wifi_signal
+    name: Wifi Signal
+    update_interval: 10s
+  - platform: uptime
+    name: Uptime
+
+text_sensor:
+  - platform: version
+    name: ESPHome Version
+  - platform: wifi_info
+    ssid:
+      name: WiFi
+
+switch:      
+  - platform: restart
+    name: Restart Device
