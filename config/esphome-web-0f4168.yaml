@@ -20,9 +20,11 @@ ota:
 - platform: esphome
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  power_save_mode: none
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+    - ssid: !secret backup_wifi_ssid
+      password: !secret backup_wifi_password
   ap:
     ssid: "esphome-web-0f4168 Fallback"
     password: "fallback1234"
