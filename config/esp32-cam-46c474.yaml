@@ -1,10 +1,6 @@
-substitutions:
-  device_name: "esp32-cam-46c474"
-  friendly_name: ESP32-CAM 46c474
-
 esphome:
-  name: $device_name
-  friendly_name: $friendly_name
+  name: esp32-cam-46c474
+  friendly_name: ESP32-CAM 46c474
 
 esp32:
   board: esp32cam
@@ -32,7 +28,7 @@ wifi:
       password: !secret backup_wifi_password
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: $friendly_name Fallback
+    ssid: ESP32-CAM 46c474 Fallback
     password: !secret esp32_cam_ap_password
 
 captive_portal:
