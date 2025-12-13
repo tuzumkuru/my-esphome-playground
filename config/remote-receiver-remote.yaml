@@ -1,0 +1,114 @@
+esphome:
+  name: esp32-cam-46c474
+  friendly_name: ESP32-CAM 46c474
+
+esp32:
+  board: esp32cam
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  reboot_timeout: 0s
+  encryption:
+    key: !secret esp32-cam_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret esp32-cam_ota_password
+
+wifi:
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+    - ssid: !secret backup_wifi_ssid
+      password: !secret backup_wifi_password
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ESP32-CAM 46c474 Fallback
+    password: !secret esp32_cam_ap_password
+
+captive_portal:
+
+# Time component for accurate timing
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Status LED (optional)
+status_led:
+  pin: GPIO4
+
+# Custom timing configuration
+substitutions:
+  idle_timeout: "1000"
+
+# Import the remote receiver sensor module from GitHub
+packages:
+  # Remote GitHub include (production) - using default timing values
+  remote_sensor:
+    url: https://github.com/tuzumkuru/esphome-custom-components
+    ref: main
+    file: remote_receiver_sensor/remote_receiver_sensor.yaml
+  
+  # Remote GitHub include for button mappings
+  button_mapping:
+    url: https://github.com/tuzumkuru/esphome-custom-components
+    ref: main
+    file: remote_receiver_sensor/remote_mappings/car_mp3_remote.yaml
+
+# To customize timing, define substitutions before packages:
+# substitutions:
+#   double_press_window: "500"
+#   release_timeout: "200"
+#   idle_timeout: "2000"
+
+# Define your remote_receiver with all the properties you need
+remote_receiver:
+  pin: 
+    number: GPIO15        # Change this to your receiver pin
+    inverted: true        # Set to true if your receiver needs inverted signal
+    mode:
+      input: true
+      pullup: false       # Set to true if you need internal pullup
+  dump: []                # Dump protocol (all, nec, rc_switch, etc.)
+  tolerance: 30%          # Signal tolerance for decoding
+  # buffer_size: 10kb     # Uncomment to increase buffer if needed
+  # filter: 50us          # Uncomment to filter out short glitches
+  # idle: 10ms            # Uncomment to set idle time between signals
+
+# Additional device-specific configuration
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+  
+  - platform: uptime
+    name: Uptime
+
+text_sensor:
+  - platform: version
+    name: ESPHome Version
+  
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    ssid:
+      name: Connected SSID
+
+switch:
+  - platform: restart
+    name: Restart Device
+
+# Optional: Binary sensor for IR detection (LED feedback)
+# Uncomment if you want a binary sensor that shows when ANY IR signal is received
+# binary_sensor:
+#   - platform: template
+#     name: "IR Signal Detected"
+#     id: ir_detected
+#     icon: "mdi:signal"
+#     lambda: |-
+#       return id(remote_current_state) != "idle";

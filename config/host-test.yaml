@@ -1,0 +1,30 @@
+esphome:
+  name: sdl
+
+host:
+
+display:
+  - platform: sdl
+    #show_test_card: true
+    dimensions:
+      width: 480
+      height: 320
+    auto_clear_enabled: false 
+
+touchscreen:
+  platform: sdl
+
+lvgl:
+  #log_level: INFO
+  color_depth: 16
+  bg_color: 0x000000
+
+  pages:
+    - id: main_page
+      widgets:
+        - label:
+            text_font: montserrat_36
+            text: "hello world"
+            id: hellowordlabel
+            align: center
+            text_color: 0xFFFFFF
