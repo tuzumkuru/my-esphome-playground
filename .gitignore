@@ -7,3 +7,5 @@
 
 .env
 .venv
+# Separate git repository for custom components
+modules/
