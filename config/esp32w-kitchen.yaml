@@ -1,7 +1,8 @@
 substitutions:
   friendly_name: "ESP32-WROOM 0f4168"
 
-<<: !include device_headers/esp32-wroom-0f4168.yaml
+packages:
+  device: !include device_headers/esp32-wroom-0f4168.yaml
 
 preferences:
   flash_write_interval: 1min

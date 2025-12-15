@@ -1,16 +1,8 @@
 substitutions:
   friendly_name: "ESP32-CAM PIR 46c474"
 
-<<: !include device_headers/esp32-cam-46c474.yaml
-
-# Time component for accurate timing
-time:
-  - platform: homeassistant
-    id: homeassistant_time
-
-# Status LED (optional)
-status_led:
-  pin: GPIO4
+packages:
+  device: !include device_headers/esp32-cam-46c474.yaml
 
 binary_sensor:
   - platform: gpio

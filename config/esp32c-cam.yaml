@@ -1,7 +1,8 @@
 substitutions:
   friendly_name: "ESP32-CAM 46c474"
 
-<<: !include device_headers/esp32-cam-46c474.yaml
+packages:
+  device: !include ./device_headers/esp32-cam-46c474.yaml
 
 psram:
 
@@ -40,19 +41,9 @@ output:
   - platform: gpio
     pin: GPIO4
     id: gpio_4
-#statuslight led 33 for wifi connect
-  - platform: gpio
-    pin:
-      number: GPIO33
-      inverted: True
-    id: gpio_33
 
 light:
 #flashlight
   - platform: binary
     output: gpio_4
     name: Light
-#statuslight led 33 for wifi connect
-  - platform: binary
-    output: gpio_33
-    name: Light State

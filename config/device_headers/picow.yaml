@@ -18,3 +18,7 @@ logger:
 
 packages:
   diagnostics: !include ../device_config/diagnostics.yaml
+  status_led: !include
+    file: ../../modules/status_led/status_led.yaml
+    vars:
+      pin_number: 32

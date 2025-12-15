@@ -1,7 +1,8 @@
 substitutions:
-  friendly_name: "PicoW Temperature Sensor"
+  friendly_name: "PicoW Temp Sensor"
 
-<<: !include device_headers/picow-02.yaml
+packages:
+  device: !include ./device_headers/picow-02.yaml
 
 globals:
   - id: led_activity_enabled
@@ -12,53 +13,6 @@ globals:
     type: int
     initial_value: '60'
     restore_value: true
-
-switch:
-  - platform: gpio
-    pin:
-      number: 32
-      mode: output
-    id: LED
-  - platform: template
-    name: "LED Activity"
-    id: led_activity
-    optimistic: true
-    icon: mdi:led-strip
-    turn_on_action:
-      - globals.set:
-          id: led_activity_enabled
-          value: 'true'
-    turn_off_action:
-      - globals.set:
-          id: led_activity_enabled
-          value: 'false'
-      - switch.turn_off:
-          id: LED
-
-interval:
-  - interval: 500ms
-    then:
-      - if:
-          condition:
-            and:
-              - lambda: |-
-                  return id(led_activity_enabled);
-              - not:
-                  wifi.connected: {}
-          then:
-            - switch.toggle:
-                id: LED
-  - interval: 1000ms
-    then:
-      - if:
-          condition:
-            and:
-              - lambda: |-
-                  return id(led_activity_enabled);
-              - wifi.connected: {}
-          then:
-            - switch.toggle:
-                id: LED
 
 # I2C for SGP4x/SGP40
 i2c:

@@ -1,56 +1,8 @@
 substitutions:
-  friendly_name: "PicoW Temperature Sensor"
+  friendly_name: "PicoW Temp Sensor"
 
-<<: !include device_headers/picow-01.yaml
-
-globals:
-  - id: led_activity_enabled
-    type: bool
-    initial_value: 'true'
-    restore_value: yes
-
-switch:
-  - platform: gpio
-    pin:
-      number: LED
-      mode: output
-    id: LED
-  - platform: template
-    name: "LED Activity"
-    id: led_activity
-    optimistic: true
-    icon: "mdi:led-strip"
-    turn_on_action:
-      - globals.set:
-          id: led_activity_enabled
-          value: 'true'
-    turn_off_action:
-      - globals.set:
-          id: led_activity_enabled
-          value: 'false'
-      - switch.turn_off: LED
-
-interval:
-  - interval: 500ms
-    then:
-      - if:
-          condition:
-            and:
-              - lambda: 'return id(led_activity_enabled);'
-              - not:
-                  wifi.connected: {}
-          then:
-            - switch.toggle: LED
-  - interval: 1000ms
-    then:
-      - if:
-          condition:
-            and:
-              - lambda: 'return id(led_activity_enabled);'
-              - wifi.connected: {}
-          then:
-            - switch.toggle: LED
-
+packages:
+  device: !include ./device_headers/picow-01.yaml
 
 # I2C bus for sensors
 i2c:

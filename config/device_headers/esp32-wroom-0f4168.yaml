@@ -1,4 +1,5 @@
-substitutions: {}
+substitutions: 
+  friendly_name: "ESP32-WROOM-0f4168"
   
 esphome:
   name: esp32-wroom-0f4168

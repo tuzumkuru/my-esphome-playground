@@ -1,0 +1,5 @@
+substitutions:
+  friendly_name: "ESP32-CAM 46c474"
+
+packages:
+  device: !include ./device_headers/esp32-cam-46c474.yaml

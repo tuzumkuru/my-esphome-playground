@@ -1,4 +1,5 @@
-substitutions: {}
+substitutions: 
+  friendly_name: "ESP32-CAM-46c474"
 
 esphome:
   name: esp32-cam-46c474
@@ -9,16 +10,6 @@ esp32:
   board: esp32cam
   framework:
     type: arduino
-
-wifi:
-  networks:
-    - ssid: !secret wifi_ssid
-      password: !secret wifi_password
-    - ssid: !secret backup_wifi_ssid
-      password: !secret backup_wifi_password
-  ap:
-    ssid: "${friendly_name} Fallback"
-    password: !secret fallback_ap_password
     
 captive_portal:
 
@@ -34,3 +25,9 @@ logger:
 
 packages:
   diagnostics: !include ../device_config/diagnostics.yaml
+  wifi: !include ../device_config/wifi.yaml
+  status_led: !include
+    file: ../modules/status_led/status_led.yaml
+    vars:
+      pin_number: GPIO33
+      pin_inverted: true
