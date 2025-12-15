@@ -1,37 +1,7 @@
-esphome:
-  name: esp32-cam-46c474
-  friendly_name: ESP32-CAM 46c474
+substitutions:
+  friendly_name: "ESP32-CAM 46c474"
 
-esp32:
-  board: esp32cam
-  framework:
-    type: arduino
-
-# Enable logging
-logger:
-
-# Enable Home Assistant API
-api:
-  reboot_timeout: 0s
-  encryption:
-    key: !secret esp32-cam_api_encryption_key
-
-ota:
-  - platform: esphome
-    password: !secret esp32-cam_ota_password
-
-wifi:
-  networks:
-    - ssid: !secret wifi_ssid
-      password: !secret wifi_password
-    - ssid: !secret backup_wifi_ssid
-      password: !secret backup_wifi_password
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: ESP32-CAM 46c474 Fallback
-    password: !secret esp32_cam_ap_password
-
-captive_portal:
+<<: !include device_headers/esp32-cam-46c474.yaml
 
 psram:
 
@@ -60,13 +30,6 @@ esp32_camera:
   contrast: 0 # default: 0, variable -2 to 2
   brightness: 0 # default: 0, variable -2 to 2
   saturation: 0 # default: 0, variable -2 to 2
-  
-# Server video/pictures, https://esphome.io/components/esp32_camera_web_server.html
-# esp32_camera_web_server:
-#   - port: 8080
-#     mode: stream
-#   - port: 8081
-#     mode: snapshot
 
 time:
   - platform: homeassistant
@@ -93,21 +56,3 @@ light:
   - platform: binary
     output: gpio_33
     name: Light State
-
-sensor:
-  - platform: wifi_signal
-    name: Wifi Signal
-    update_interval: 10s
-  - platform: uptime
-    name: Uptime
-
-text_sensor:
-  - platform: version
-    name: ESPHome Version
-  - platform: wifi_info
-    ssid:
-      name: WiFi
-
-switch:      
-  - platform: restart
-    name: Restart Device

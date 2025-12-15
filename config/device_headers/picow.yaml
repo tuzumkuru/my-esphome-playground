@@ -1,0 +1,20 @@
+esphome:
+  name: esphome-picow
+  friendly_name: "${friendly_name}"
+  name_add_mac_suffix: True
+
+rp2040:
+  board: rpipicow
+
+api:
+  encryption:
+    key: !secret picow_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret picow_ota_password
+
+logger:
+
+packages:
+  diagnostics: !include ../device_config/diagnostics.yaml

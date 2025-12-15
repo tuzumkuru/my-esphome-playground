@@ -1,0 +1,28 @@
+substitutions: {}
+  
+esphome:
+  name: esp32-wroom-0f4168
+  friendly_name: "${friendly_name}"
+  name_add_mac_suffix: false
+
+esp32:
+  variant: esp32
+  framework:
+    type: esp-idf
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret esp32-wroom_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret esp32-wroom_ota_password
+
+logger:
+  level: DEBUG
+
+packages:  
+  wifi: !include ../device_config/wifi.yaml
+  diagnostics: !include ../device_config/diagnostics.yaml

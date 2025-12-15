@@ -1,0 +1,33 @@
+substitutions:
+  friendly_name: "ESP32 Receiver 46c474"
+
+<<: !include device_headers/esp32-cam-46c474.yaml
+
+packages:
+  remote_sensor: !include ../modules/remote_receiver_sensor/remote_receiver_sensor.yaml
+  button_mapping: !include ../modules/remote_receiver_sensor/remote_mappings/car_mp3_remote.yaml
+  # # Remote GitHub include for remote_sensor
+  # remote_sensor:
+  #   url: https://github.com/tuzumkuru/esphome-custom-components
+  #   ref: main
+  #   file: remote_receiver_sensor/remote_receiver_sensor.yaml
+  
+  # # Remote GitHub include for button mappings
+  # button_mapping:
+  #   url: https://github.com/tuzumkuru/esphome-custom-components
+  #   ref: main
+  #   file: remote_receiver_sensor/remote_mappings/car_mp3_remote.yaml
+
+# Define your remote_receiver with all the properties you need
+remote_receiver:
+  pin: 
+    number: GPIO15        # Change this to your receiver pin
+    inverted: true        # Set to true if your receiver needs inverted signal
+    mode:
+      input: true
+      pullup: false       # Set to true if you need internal pullup
+  dump: []                # Dump protocol (all, nec, rc_switch, etc.)
+  tolerance: "30%"          # Signal tolerance for decoding
+  # buffer_size: 10kb     # Uncomment to increase buffer if needed
+  # filter: 50us          # Uncomment to filter out short glitches
+  # idle: 10ms            # Uncomment to set idle time between signals
